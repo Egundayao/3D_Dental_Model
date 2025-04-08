@@ -2,7 +2,7 @@ import { useGLTF } from "@react-three/drei";
 import { useState } from "react";
 
 export default function Model({ onSelect }) {
-  const { nodes } = useGLTF("/FirstTry.glb");
+  const { nodes } = useGLTF("/ThirdTry.glb");
   const [selected, setSelected] = useState(null);
 
   const molarMesh = nodes["Molar3_Crown"];
