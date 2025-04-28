@@ -1,40 +1,63 @@
 import { useGLTF } from "@react-three/drei";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Model({ onSelect }) {
-  const { nodes } = useGLTF("/ThirdTry.glb");
-  const [selected, setSelected] = useState(null);
+  const { nodes } = useGLTF("/T37_Material_Testing_2.glb");
+  const [selectedPart, setSelectedPart] = useState(null);
 
-  const molarMesh = nodes["Molar3_Crown"];
+  const interactiveParts = {
+    "Molar3_Crown": "yellow",
+    "T37_Occlusal": "red",
+    "T37_buccal": "lightgreen",
+    "T37_lingual": "pink",
+    "T37_distal.001": "orange",
+    "T37_mesial": "violet",
+  };
+
+  const handleSelect = (part) => {
+    setSelectedPart(part);
+    if (onSelect) onSelect(part);
+  };
+
+  useEffect(() => {
+    console.log("Loaded nodes:", nodes);
+  }, [nodes]);
 
   return (
     <group>
-      {/* Render everything else in the model */}
+      {/* Render ALL parts */}
       {Object.entries(nodes).map(([key, node]) => {
-        if (key === "Molar3_Crown") return null; // we'll render it separately below
         if (!node.geometry) return null;
-        return <primitive key={key} object={node} />;
-      })}
 
-      {/* Render the Molar3_Crown separately with interactivity */}
-      {molarMesh && (
-        <mesh
-          geometry={molarMesh.geometry}
-          material={molarMesh.material.clone()}
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelected("Molar3_Crown");
-            onSelect && onSelect("Molar3_Crown");
-          }}
-          onPointerOver={() => (document.body.style.cursor = "pointer")}
-          onPointerOut={() => (document.body.style.cursor = "default")}
-        >
-          <meshStandardMaterial
-            attach="material"
-            color={selected === "Molar3_Crown" ? "yellow" : "white"}
-          />
-        </mesh>
-      )}
+        const isInteractive = key in interactiveParts;
+        const isSelected = selectedPart === key;
+
+        return (
+          <mesh
+            key={key}
+            geometry={node.geometry}
+            onClick={isInteractive ? (e) => { e.stopPropagation(); handleSelect(key); } : undefined}
+            onPointerOver={isInteractive ? () => (document.body.style.cursor = "pointer") : undefined}
+            onPointerOut={isInteractive ? () => (document.body.style.cursor = "default") : undefined}
+          >
+            <meshStandardMaterial
+              map={node.material.map || null}
+              normalMap={node.material.normalMap || null}
+              roughnessMap={node.material.roughnessMap || null}
+              metalnessMap={node.material.metalnessMap || null}
+              roughness={node.material.roughness}
+              metalness={node.material.metalness}
+              transparent={node.material.transparent}
+              opacity={node.material.opacity}
+              color={
+                isInteractive && isSelected
+                  ? interactiveParts[key] // If selected, use highlight color
+                  : `#${node.material.color.getHexString()}` // Else use original color
+              }
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 }
